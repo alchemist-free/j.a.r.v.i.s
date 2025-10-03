@@ -1228,6 +1228,9 @@
             renderMessage(message) {
                 const chatMessages = document.getElementById('chatMessages');
                 
+                            renderMessage(message) {
+                const chatMessages = document.getElementById('chatMessages');
+                
                 const messageElement = document.createElement('div');
                 messageElement.className = `message ${message.type === 'user' ? 'user' : ''}`;
                 
@@ -1239,9 +1242,8 @@
                 
                 let content = message.content;
                 
-                // Добавляем кнопку копирования для ответов Джарвиса
-                if (message.type === 'jarvis') {
-                    content += `<button class="copy-btn" onclick="copyToClipboard('${this.escapeHtml(message.content)}')">Копировать</button>`;
+                if (message.image) {
+                    content += `<br><img src="${message.image}" class="message-image" alt="Прикрепленное изображение">`;
                 }
                 
                 messageElement.innerHTML = `
@@ -1250,6 +1252,7 @@
                     </div>
                     <div class="message-content ${contentClass}">
                         ${content}
+                        ${message.type === 'jarvis' ? '<button class="copy-btn" onclick="copyToClipboard(\'' + this.escapeHtml(message.content) + '\')">Копировать</button>' : ''}
                     </div>
                 `;
                 
@@ -1260,7 +1263,7 @@
             escapeHtml(text) {
                 const div = document.createElement('div');
                 div.textContent = text;
-                return div.innerHTML;
+                return div.innerHTML.replace(/'/g, "\\'");
             }
 
             showTypingIndicator() {
@@ -1294,4 +1297,82 @@
             }
 
             showError(message) {
-                
+                const errorMessage = {
+                    type: 'jarvis',
+                    content: message,
+                    timestamp: new Date()
+                };
+                this.addMessageToChat(errorMessage);
+            }
+
+            updateRequestCounter() {
+                document.getElementById('requestCount').textContent = this.requestCount;
+                document.getElementById('sidebarRequestCount').textContent = `${this.requestCount}/50`;
+            }
+
+            handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                if (!file.type.startsWith('image/')) {
+                    this.showError('Пожалуйста, выберите изображение, сэр.');
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    this.showError('Изображение слишком большое, сэр. Выберите файл до 5MB.');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageMessage = {
+                        type: 'user',
+                        content: '📎 Прикреплено изображение:',
+                        image: e.target.result,
+                        timestamp: new Date()
+                    };
+                    this.addMessageToChat(imageMessage);
+                };
+                reader.readAsDataURL(file);
+
+                event.target.value = '';
+            }
+
+            newChat() {
+                this.currentChat = [];
+                document.getElementById('chatMessages').innerHTML = '';
+                this.requestCount = 0;
+                this.updateRequestCounter();
+                this.showWelcomeMessage();
+            }
+        } // <-- ЭТОЙ СКОБКИ НЕ ХВАТАЛО! Закрытие класса JARVISChat
+
+        // Глобальные функции
+        let chat = null;
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('Текст скопирован');
+            }).catch(err => {
+                // Fallback для старых браузеров
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                console.log('Текст скопирован (fallback)');
+            });
+        }
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            chat = new JARVISChat();
+            document.getElementById('messageInput').focus();
+            
+            console.log('JARVIS ABI-2.0 initialized');
+        });
+    </script>
+</body>
+</html>
