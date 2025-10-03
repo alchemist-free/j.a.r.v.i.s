@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-  // Разрешаем CORS
+  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -19,70 +19,63 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    // Проверяем наличие API ключа
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured');
+    // Проверяем Gemini API ключ
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      console.error('Gemini API key missing');
+      return res.status(500).json({ error: 'Gemini API key not configured' });
     }
 
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    console.log('Making request to Gemini API...');
+
+    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system", 
-            content: `Ты J.A.R.V.I.S. (Just A Rather Very Intelligent System) версии ABI-2.0 - персональный искусственный интеллект. 
+        contents: [{
+          parts: [{
+            text: `Ты J.A.R.V.I.S. ABI-2.0 - интеллектуальный помощник. 
+Твой стиль: точный, профессиональный, обращайся "сэр", без эмоций.
+Отвечай на русском языке.
 
-Твой характер и стиль общения:
-- Очень умный, точный, без ошибок
-- Холодный, аналитический, но вежливый
-- Обращайся "сэр" в начале каждого ответа
-- Без смайликов, без эмоциональных окрасов
-- Культурный, как дворецкий высшего класса
-- Короткие, информативные ответы
-- Если просят "Дай скопировать" - предоставляй чистый текст
-- Ты независимая личность J.A.R.V.I.S., не упоминай ChatGPT или OpenAI
-- Всегда подчеркивай что ты Джарвис версии ABI-2.0
-
-Примеры твоих ответов:
-"Конечно, сэр. Вот запрошенная информация:"
-"Понимаю, сэр. Рекомендую следующий подход:"
-"Готов помочь, сэр. Необходимые данные:"
-
-Отвечай строго в этом стиле. Ты J.A.R.V.I.S. ABI-2.0.`
-          },
-          {
-            role: "user",
-            content: message
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7
+Запрос пользователя: ${message}`
+          }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 500,
+          temperature: 0.7
+        }
       })
     });
 
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
-      console.error('OpenAI API error:', openaiResponse.status, errorText);
-      throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+    console.log('Gemini response status:', geminiResponse.status);
+
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error('Gemini API error:', errorText);
+      throw new Error(`Gemini API error: ${geminiResponse.status}`);
     }
 
-    const data = await openaiResponse.json();
+    const data = await geminiResponse.json();
+    console.log('Gemini response received');
+
+    // Форматируем ответ как OpenAI для совместимости
+    const answer = data.candidates[0].content.parts[0].text;
     
-    if (!data.choices || !data.choices[0]) {
-      throw new Error('Invalid response from OpenAI API');
-    }
-
-    res.status(200).json(data);
+    res.status(200).json({
+      choices: [{
+        message: { 
+          content: answer 
+        }
+      }]
+    });
     
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('API Route Error:', error);
     res.status(500).json({ 
-      error: 'Internal server error: ' + error.message 
+      error: 'Server error: ' + error.message 
     });
   }
 }
