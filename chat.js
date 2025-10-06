@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     console.log('🔑 API Key exists, first chars:', apiKey.substring(0, 10) + '...');
 
     // ПРАВИЛЬНЫЙ URL - пробуем разные варианты
-    const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    const geminiURL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`;
     console.log('🌐 Request URL:', geminiURL);
 
     const geminiResponse = await fetch(geminiURL, {
