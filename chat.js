@@ -1,4 +1,6 @@
 export default async function handler(req, res) {
+  console.log('🎯 API called!');
+  
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -14,25 +16,23 @@ export default async function handler(req, res) {
 
   try {
     const { message } = req.body;
+    console.log('📨 Received:', message);
 
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
-    }
-
-    // ПРОСТОЙ ОТВЕТ ДЛЯ ТЕСТА
-    const testResponse = `✅ API работает! Ваш запрос: "${message}"`;
+    // Тестовый ответ
+    const responseText = `✅ API работает! Ваш запрос: "${message}"`;
 
     res.status(200).json({
       choices: [{
         message: { 
-          content: testResponse 
+          content: responseText 
         }
       }]
     });
 
   } catch (error) {
+    console.error('❌ Error:', error);
     res.status(500).json({ 
-      error: 'Server error: ' + error.message 
+      error: 'Server error' 
     });
   }
 }
