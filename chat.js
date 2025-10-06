@@ -18,47 +18,46 @@ export default async function handler(req, res) {
     const { message } = req.body;
     console.log('📨 Received:', message);
 
-    // Проверяем Groq API ключ
-    const apiKey = process.env.GROQ_API_KEY;
+    // Проверяем OpenAI API ключ
+    const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      throw new Error('GROQ_API_KEY not configured');
+      throw new Error('OPENAI_API_KEY not configured');
     }
 
     console.log('🔑 API Key exists, first chars:', apiKey.substring(0, 10) + '...');
 
-    // Groq API
-    console.log('🚀 Using Groq API...');
-    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    // OpenAI API
+    console.log('🚀 Using OpenAI API...');
+    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-  model: 'llama-3.2-3b-preview',
-  messages: [{
-    role: 'system',
-    content: 'Ты J.A.R.V.I.S. ABI-2.0. Искусственный интеллект и интеллектуальный помощник. Отвечай как Джарвис из фильмов Marvel. Обращайся "сэр". Будь точным, профессиональным, немного формальным, но полезным. Отвечай на русском языке.'
-  }, {
-    role: 'user', 
-    content: message
-  }],
-  max_tokens: 500,
-  temperature: 0.7,
-  stream: false
-})
+        model: 'gpt-3.5-turbo',
+        messages: [{
+          role: 'system',
+          content: 'Ты J.A.R.V.I.S. ABI-2.0. Искусственный интеллект и интеллектуальный помощник. Отвечай как Джарвис из фильмов Marvel. Обращайся "сэр". Будь точным, профессиональным, немного формальным, но полезным. Отвечай на русском языке.'
+        }, {
+          role: 'user', 
+          content: message
+        }],
+        max_tokens: 500,
+        temperature: 0.7
+      })
     });
 
-    console.log('📡 Response status:', groqResponse.status);
+    console.log('📡 Response status:', openaiResponse.status);
 
-    if (!groqResponse.ok) {
-      const errorText = await groqResponse.text();
-      console.error('❌ Groq API error:', errorText);
-      throw new Error(`Groq API error ${groqResponse.status}: ${errorText}`);
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      console.error('❌ OpenAI API error:', errorText);
+      throw new Error(`OpenAI API error ${openaiResponse.status}: ${errorText}`);
     }
 
-    const data = await groqResponse.json();
-    console.log('✅ Groq response received');
+    const data = await openaiResponse.json();
+    console.log('✅ OpenAI response received');
 
     const answer = data.choices[0].message.content;
     console.log('🤖 Answer:', answer);
