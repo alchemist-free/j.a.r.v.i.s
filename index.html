@@ -621,27 +621,32 @@
             }
 
             async getJARVISResponse(question) {
-                try {
-                    const response = await fetch('/api/chat', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ message: question })
-                    });
+    try {
+        console.log('Sending request to API...');
+        
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message: question })
+        });
 
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || 'Ошибка системы');
-                    }
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
+        }
 
-                    const data = await response.json();
-                    return data.choices[0].message.content;
-                    
-                } catch (error) {
-                    console.error('API Request failed:', error);
-                    throw new Error('Проверьте подключение к сети');
-                }
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        return data.choices[0].message.content;
+        
+    } catch (error) {
+        console.error('API Request failed:', error);
+        throw new Error('Ошибка подключения: ' + error.message);
+    }
             }
 
             addMessageToChat(message) {
