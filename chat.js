@@ -18,50 +18,49 @@ export default async function handler(req, res) {
     const { message } = req.body;
     console.log('📨 Received:', message);
 
-    // Проверяем Gemini API ключ
-    const apiKey = process.env.GEMINI_API_KEY;
+    // Проверяем Groq API ключ
+    const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) {
-      throw new Error('GEMINI_API_KEY not configured');
+      throw new Error('GROQ_API_KEY not configured');
     }
 
     console.log('🔑 API Key exists, first chars:', apiKey.substring(0, 10) + '...');
 
-    // ПРАВИЛЬНЫЙ URL - пробуем разные варианты
-    const geminiURL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`;
-    console.log('🌐 Request URL:', geminiURL);
-
-    const geminiResponse = await fetch(geminiURL, {
+    // Groq API
+    console.log('🚀 Using Groq API...');
+    const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Ты J.A.R.V.I.S. ABI-2.0. Отвечай как интеллектуальный помощник. Обращайся "сэр". Будь точным и профессиональным. Отвечай на русском.
-
-Вопрос: ${message}`
-          }]
+        model: 'llama3-70b-8192',
+        messages: [{
+          role: 'system',
+          content: 'Ты J.A.R.V.I.S. ABI-2.0. Искусственный интеллект и интеллектуальный помощник. Отвечай как Джарвис из фильмов Marvel. Обращайся "сэр". Будь точным, профессиональным, немного формальным, но полезным. Отвечай на русском языке.'
+        }, {
+          role: 'user', 
+          content: message
         }],
-        generationConfig: {
-          maxOutputTokens: 500,
-          temperature: 0.7
-        }
+        max_tokens: 500,
+        temperature: 0.7,
+        stream: false
       })
     });
 
-    console.log('📡 Response status:', geminiResponse.status);
+    console.log('📡 Response status:', groqResponse.status);
 
-    if (!geminiResponse.ok) {
-      const errorText = await geminiResponse.text();
-      console.error('❌ Full error response:', errorText);
-      throw new Error(`Gemini API error ${geminiResponse.status}: ${errorText}`);
+    if (!groqResponse.ok) {
+      const errorText = await groqResponse.text();
+      console.error('❌ Groq API error:', errorText);
+      throw new Error(`Groq API error ${groqResponse.status}: ${errorText}`);
     }
 
-    const data = await geminiResponse.json();
-    console.log('✅ Response received');
+    const data = await groqResponse.json();
+    console.log('✅ Groq response received');
 
-    const answer = data.candidates[0].content.parts[0].text;
+    const answer = data.choices[0].message.content;
     console.log('🤖 Answer:', answer);
 
     res.status(200).json({
