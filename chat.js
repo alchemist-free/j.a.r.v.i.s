@@ -24,10 +24,13 @@ export default async function handler(req, res) {
       throw new Error('GEMINI_API_KEY not configured');
     }
 
-    console.log('🔑 Using Gemini API...');
+    console.log('🔑 API Key exists, first chars:', apiKey.substring(0, 10) + '...');
 
-    // Запрос к Gemini API
-    const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    // ПРАВИЛЬНЫЙ URL - пробуем разные варианты
+    const geminiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    console.log('🌐 Request URL:', geminiURL);
+
+    const geminiResponse = await fetch(geminiURL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,11 +38,9 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: `Ты J.A.R.V.I.S. ABI-2.0 - интеллектуальный помощник. 
-Твой стиль: точный, профессиональный, обращайся "сэр", без эмоций.
-Отвечай на русском языке.
+            text: `Ты J.A.R.V.I.S. ABI-2.0. Отвечай как интеллектуальный помощник. Обращайся "сэр". Будь точным и профессиональным. Отвечай на русском.
 
-Запрос пользователя: ${message}`
+Вопрос: ${message}`
           }]
         }],
         generationConfig: {
@@ -49,15 +50,19 @@ export default async function handler(req, res) {
       })
     });
 
+    console.log('📡 Response status:', geminiResponse.status);
+
     if (!geminiResponse.ok) {
       const errorText = await geminiResponse.text();
-      throw new Error(`Gemini API error: ${geminiResponse.status}`);
+      console.error('❌ Full error response:', errorText);
+      throw new Error(`Gemini API error ${geminiResponse.status}: ${errorText}`);
     }
 
     const data = await geminiResponse.json();
-    const answer = data.candidates[0].content.parts[0].text;
+    console.log('✅ Response received');
 
-    console.log('✅ Gemini response:', answer);
+    const answer = data.candidates[0].content.parts[0].text;
+    console.log('🤖 Answer:', answer);
 
     res.status(200).json({
       choices: [{
@@ -68,15 +73,12 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('❌ Error:', error);
-    
-    // Fallback ответ если API не работает
-    const fallbackResponse = `Конечно, сэр. Ваш запрос получен. ${error.message}`;
+    console.error('💥 Final error:', error);
     
     res.status(200).json({
       choices: [{
         message: { 
-          content: fallbackResponse 
+          content: `Сэр, техническая ошибка: ${error.message}` 
         }
       }]
     });
