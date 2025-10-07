@@ -1,76 +1,46 @@
-export default async function handler(req, res) {
-  console.log('🎯 API called!');
-  
-  // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+// chat.js
+const API_URL = "https://api-inference.huggingface.co/models/google/gemma-2b-it";
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+async function sendMessage(userMessage) {
+  const headers = {
+    Authorization: `Bearer ${process.env.HF_TOKEN}`, // токен хранится в Vercel
+    "Content-Type": "application/json",
+  };
+
+  const body = JSON.stringify({
+    inputs: `Вы — искусственный интеллект по имени Lumen. Очень умный, без ошибок, холодный, говорит как Джарвис. 
+    Манера общения вежливая, формальная, всегда обращается к пользователю как «сэр». 
+    Ответьте пользователю:\nПользователь: ${userMessage}\nLumen:`,
+  });
+
+  const response = await fetch(API_URL, {
+    method: "POST",
+    headers,
+    body,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Ошибка запроса: ${response.statusText}`);
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    const { message } = req.body;
-    console.log('📨 Received:', message);
-
-    const apiKey = process.env.HUGGINGFACE_API_KEY;
-    if (!apiKey) throw new Error('HUGGINGFACE_API_KEY not configured');
-
-    console.log('🚀 Using DialoGPT...');
-    const hfResponse = await fetch(
-      'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          inputs: `Ты J.A.R.V.I.S. ABI-2.0. Отвечай как интеллектуальный помощник. Обращайся "сэр". Вопрос: ${message}`,
-          parameters: {
-            max_new_tokens: 200,
-            temperature: 0.7,
-            return_full_text: false
-          }
-        })
-      }
-    );
-
-    console.log('📡 Response status:', hfResponse.status);
-
-    if (!hfResponse.ok) {
-      const errorText = await hfResponse.text();
-      console.error('❌ Hugging Face API error:', errorText);
-      throw new Error(`Hugging Face API error: ${errorText}`);
-    }
-
-    const data = await hfResponse.json();
-    console.log('✅ Response received');
-
-    const answer = data[0]?.generated_text || 'Сэр, извините, не могу ответить';
-
-    res.status(200).json({
-      choices: [{
-        message: { 
-          content: answer 
-        }
-      }]
-    });
-
-  } catch (error) {
-    console.error('💥 Final error:', error);
-    
-    res.status(200).json({
-      choices: [{
-        message: { 
-          content: `Сэр, ошибка: ${error.message}` 
-        }
-      }]
-    });
-  }
+  const data = await response.json();
+  const reply = data?.[0]?.generated_text || "Извините, сэр, произошла ошибка.";
+  return reply.replace(/^.*Lumen:/s, "").trim();
 }
+
+// Подключение к HTML
+const input = document.getElementById("user-input");
+const sendBtn = document.getElementById("send-btn");
+const chatBox = document.getElementById("chat-box");
+
+sendBtn.addEventListener("click", async () => {
+  const userText = input.value.trim();
+  if (!userText) return;
+
+  chatBox.innerHTML += `<div class="user">Вы: ${userText}</div>`;
+  input.value = "";
+
+  const reply = await sendMessage(userText);
+  chatBox.innerHTML += `<div class="lumen">Lumen: ${reply}</div>`;
+  chatBox.scrollTop = chatBox.scrollHeight;
+});
