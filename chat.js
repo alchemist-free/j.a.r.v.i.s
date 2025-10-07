@@ -18,13 +18,12 @@ export default async function handler(req, res) {
     const { message } = req.body;
     console.log('📨 Received:', message);
 
-    // Hugging Face API ключ
     const apiKey = process.env.HUGGINGFACE_API_KEY;
     if (!apiKey) throw new Error('HUGGINGFACE_API_KEY not configured');
 
-    console.log('🚀 Using Gemma 7B...');
+    console.log('🚀 Using DialoGPT...');
     const hfResponse = await fetch(
-      'https://api-inference.huggingface.co/models/google/gemma-7b-it',
+      'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium',
       {
         method: 'POST',
         headers: {
@@ -32,20 +31,11 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: `<start_of_turn>system
-Ты J.A.R.V.I.S. ABI-2.0. Интеллектуальный помощник. Обращайся "сэр". Отвечай на русском.<end_of_turn>
-<start_of_turn>user
-${message}<end_of_turn>
-<start_of_turn>model`,
+          inputs: `Ты J.A.R.V.I.S. ABI-2.0. Отвечай как интеллектуальный помощник. Обращайся "сэр". Вопрос: ${message}`,
           parameters: {
-            max_new_tokens: 500,
+            max_new_tokens: 200,
             temperature: 0.7,
-            top_p: 0.9,
-            do_sample: true,
             return_full_text: false
-          },
-          options: {
-            wait_for_model: true
           }
         })
       }
@@ -60,10 +50,9 @@ ${message}<end_of_turn>
     }
 
     const data = await hfResponse.json();
-    console.log('✅ Hugging Face response received');
+    console.log('✅ Response received');
 
-    // Извлекаем ответ
-    const answer = data[0]?.generated_text || 'Сэр, извините, не могу обработать запрос';
+    const answer = data[0]?.generated_text || 'Сэр, извините, не могу ответить';
 
     res.status(200).json({
       choices: [{
