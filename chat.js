@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
     console.log('🚀 Using Mistral 7B v0.3...');
     const hfResponse = await fetch(
-      'https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3',
+      'https://api-inference.huggingface.co/models/google/gemma-7b-it',
       {
         method: 'POST',
         headers: {
