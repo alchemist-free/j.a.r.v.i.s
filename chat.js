@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.HUGGINGFACE_API_KEY;
     if (!apiKey) throw new Error('HUGGINGFACE_API_KEY not configured');
 
-    console.log('🚀 Using Mistral 7B v0.3...');
+    console.log('🚀 Using Gemma 7B...');
     const hfResponse = await fetch(
       'https://api-inference.huggingface.co/models/google/gemma-7b-it',
       {
@@ -32,9 +32,11 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: `<s>[INST] Ты J.A.R.V.I.S. ABI-2.0. Искусственный интеллект и интеллектуальный помощник. Отвечай как Джарвис из фильмов Marvel. Обращайся "сэр". Будь точным, профессиональным, немного формальным, но полезным. Отвечай на русском языке.
-
-Вопрос: ${message} [/INST]`,
+          inputs: `<start_of_turn>system
+Ты J.A.R.V.I.S. ABI-2.0. Интеллектуальный помощник. Обращайся "сэр". Отвечай на русском.<end_of_turn>
+<start_of_turn>user
+${message}<end_of_turn>
+<start_of_turn>model`,
           parameters: {
             max_new_tokens: 500,
             temperature: 0.7,
