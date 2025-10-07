@@ -462,7 +462,7 @@
                     </div>
                     <div class="status-item">
                         <span>Версия</span>
-                        <span class="status-value">ABI-2.0</span>
+                        <span class="status-value">PEO-1.0</span>
                     </div>
                 </div>
             </div>
@@ -499,7 +499,7 @@
                         <input type="file" id="fileInput" accept="image/*" style="display: none;">
                         <textarea 
                             id="messageInput" 
-                            placeholder="Обратитесь к Джарвису, сэр..." 
+                            placeholder="Спросите что-нибудь..." 
                             rows="1"
                         ></textarea>
                         <button class="send-btn" id="sendButton">
@@ -517,7 +517,7 @@
     </div>
 
     <script>
-        class LumenChat {
+        class JarvisChat {
             constructor() {
                 this.requestCount = 0;
                 this.maxRequests = 50;
@@ -605,7 +605,7 @@
                     this.removeTypingIndicator(typingIndicator);
                     
                     const jarvisMessage = {
-                        type: 'Lumen',
+                        type: 'Jarvis',
                         content: response,
                         timestamp: new Date()
                     };
@@ -664,7 +664,7 @@
                     '<div class="avatar-jarvis">J</div>' : 
                     '<div class="avatar-user">Вы</div>';
                 
-                const contentClass = message.type === 'lumen' ? lumen-response' : '';
+                const contentClass = message.type === 'jarvis' ? jarvis-responce' : '';
                 
                 let content = message.content;
                 
@@ -678,7 +678,7 @@
                     </div>
                     <div class="message-content ${contentClass}">
                         ${content}
-                        ${message.type === 'Lumen' ? '<button class="copy-btn" onclick="copyToClipboard(\'' + this.escapeHtml(message.content) + '\')">Копировать</button>' : ''}
+                        ${message.type === 'jarvis' ? '<button class="copy-btn" onclick="copyToClipboard(\'' + this.escapeHtml(message.content) + '\')">Копировать</button>' : ''}
                     </div>
                 `;
                 
