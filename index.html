@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumen AI - Personal Engine Operator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a; 
+            color: #e0e0e0; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        
+        .app { display: flex; height: 100vh; }
+        
+        /* Сайдбар */
+        .sidebar { 
+            width: 280px; 
+            background: #111111; 
+            display: flex; 
+            flex-direction: column; 
+            border-right: 1px solid #1a1a1a; 
+        }
+        
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #1a1a1a; }
+        .lumen-title { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            color: #0066ff; 
+            font-size: 18px; 
+            font-weight: 600; 
+        }
+        .lumen-dot { width: 8px; height: 8px; background: #00ff88; border-radius: 50%; animation: pulse 2s infinite; }
+        
+        .new-chat-btn {
+            width: 100%; padding: 12px 16px; background: #0066ff; border: none; border-radius: 8px; 
+            color: #fff; cursor: pointer; font-size: 14px; margin-top: 15px;
+        }
+        
+        .chat-history { flex: 1; padding: 15px; overflow-y: auto; }
+        .history-item { padding: 12px 15px; background: #1a1a1a; border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+        
+        .sidebar-footer { padding: 20px; border-top: 1px solid #1a1a1a; }
+        .system-status { background: #1a1a1a; padding: 15px; border-radius: 8px; }
+        .status-item { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+        .status-value { color: #00ff88; }
+        
+        /* Основной контент */
+        .main-content { flex: 1; display: flex; flex-direction: column; background: #0a0a0a; }
+        
+        .chat-header {
+            padding: 15px 30px; border-bottom: 1px solid #1a1a1a; background: #0a0a0a;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .chat-title { display: flex; align-items: center; gap: 12px; }
+        .chat-title h1 { 
+            font-size: 20px; font-weight: 600; 
+            background: linear-gradient(135deg, #0066ff, #00ff88); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+        }
+        .version-badge { background: #0066ff; color: white; padding: 4px 8px; border-radius: 6px; font-size: 10px; }
+        .request-counter { font-size: 12px; color: #666; background: #1a1a1a; padding: 6px 12px; border-radius: 15px; }
+        
+        .chat-messages { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 25px; }
+        
+        .message { display: flex; gap: 15px; max-width: 800px; margin: 0 auto; width: 100%; align-items: flex-start; }
+        .message.user { background: rgba(26, 26, 26, 0.5); padding: 20px; border-left: 3px solid #0066ff; }
+        
+        .avatar-container { width: 40px; flex-shrink: 0; }
+        .avatar-lumen, .avatar-user { 
+            width: 36px; height: 36px; border-radius: 8px; display: flex; 
+            align-items: center; justify-content: center; font-weight: 600; font-size: 12px; 
+        }
+        .avatar-lumen { background: #0066ff; color: #fff; }
+        .avatar-user { background: #00ff88; color: #000; }
+        
+        .message-content { flex: 1; line-height: 1.6; font-size: 14px; }
+        .lumen-response { border-left: 2px solid #0066ff; padding-left: 15px; }
+        
+        .input-container { padding: 25px 30px; border-top: 1px solid #1a1a1a; background: #0a0a0a; }
+        .input-wrapper { max-width: 800px; margin: 0 auto; position: relative; }
+        .input-area { 
+            background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; 
+            display: flex; align-items: center; padding: 0 15px; 
+        }
+        #messageInput {
+            flex: 1; background: transparent; border: none; padding: 15px 0; 
+            color: #e0e0e0; font-size: 14px; resize: none; outline: none;
+            font-family: inherit; line-height: 1.5;
+        }
+        .send-btn {
+            background: #0066ff; border: none; color: #fff; cursor: pointer; 
+            padding: 8px; border-radius: 6px; margin-left: 10px;
+        }
+        
+        .disclaimer { text-align: center; font-size: 11px; color: #444; margin-top: 12px; }
+        
+        .typing-indicator { display: flex; gap: 4px; padding: 10px 0; }
+        .typing-dot { width: 8px; height: 8px; background: #0066ff; border-radius: 50%; animation: typing 1.4s infinite; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        .copy-btn { background: #2a2a2a; color: #888; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 10px; }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+        
+        /* Мобильная версия */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .chat-header { padding: 15px 20px; }
+            .chat-messages { padding: 20px; gap: 20px; }
+            .message { gap: 12px; }
+            .message.user { padding: 15px; }
+            .input-container { padding: 20px; }
+            .mobile-header { 
+                display: flex; padding: 15px 20px; border-bottom: 1px solid #1a1a1a; 
+                justify-content: space-between; align-items: center; 
+            }
+            .chat-header { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Сайдбар -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="lumen-title">
+                    <div class="lumen-dot"></div>
+                    Lumen AI
+                </div>
+                <button class="new-chat-btn" id="newChatBtn">+ Новый диалог</button>
+            </div>
+            <div class="chat-history" id="chatHistory">
+                <div class="history-item">Сегодняшний диалог</div>
+                <div class="history-item">Вчера, 15:30</div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-item"><span>Статус</span><span class="status-value">Онлайн</span></div>
+                    <div class="status-item"><span>Запросы</span><span class="status-value" id="sidebarRequestCount">0/50</span></div>
+                    <div class="status-item"><span>Версия</span><span class="status-value">PEO-1.0</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="main-content">
+            <div class="mobile-header">
+                <div class="chat-title">
+                    <h1>Lumen AI</h1>
+                    <div class="version-badge">PEO-1.0</div>
+                </div>
+                <div class="request-counter">Запросов: <span id="mobileRequestCount">0</span>/50</div>
+            </div>
+            
+            <div class="chat-header">
+                <div class="chat-title">
+                    <h1>Lumen AI</h1>
+                    <div class="version-badge">PEO-1.0</div>
+                </div>
+                <div class="request-counter">Запросов: <span id="requestCount">0</span>/50</div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="message">
+                    <div class="avatar-container"><div class="avatar-lumen">L</div></div>
+                    <div class="message-content lumen-response">
+                        Добро пожаловать! Я Lumen AI - Personal Engine Operator версии 1.0. Готов оказать помощь по любым вопросам.
+                        <button class="copy-btn">Копировать</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <div class="input-area">
+                        <textarea id="messageInput" placeholder="Обратитесь к Lumen AI..." rows="1"></textarea>
+                        <button class="send-btn" id="sendButton">➤</button>
+                    </div>
+                </div>
+                <div class="disclaimer">Lumen AI - Personal Engine Operator v1.0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Простой JS код
+        class LumenChat {
+            constructor() {
+                this.requestCount = 0;
+                this.initializeEventListeners();
+            }
+
+            initializeEventListeners() {
+                document.getElementById('sendButton').addEventListener('click', () => this.sendMessage());
+                document.getElementById('newChatBtn').addEventListener('click', () => this.newChat());
+                
+                document.getElementById('messageInput').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+            }
+
+            sendMessage() {
+                const input = document.getElementById('messageInput');
+                const message = input.value.trim();
+                if (!message) return;
+
+                // Добавляем сообщение пользователя
+                this.addMessage('user', message);
+                input.value = '';
+
+                // Показываем индикатор набора
+                const typing = this.showTyping();
+                
+                // Имитируем ответ (заглушка)
+                setTimeout(() => {
+                    this.removeTyping(typing);
+                    this.addMessage('lumen', 'Это тестовый ответ от Lumen AI. API пока не настроено.');
+                    this.requestCount++;
+                    this.updateCounters();
+                }, 1000);
+            }
+
+            addMessage(type, content) {
+                const messages = document.getElementById('chatMessages');
+                const messageEl = document.createElement('div');
+                messageEl.className = `message ${type === 'user' ? 'user' : ''}`;
+                messageEl.innerHTML = `
+                    <div class="avatar-container">
+                        <div class="${type === 'user' ? 'avatar-user' : 'avatar-lumen'}">${type === 'user' ? 'Вы' : 'L'}</div>
+                    </div>
+                    <div class="message-content ${type === 'lumen' ? 'lumen-response' : ''}">
+                        ${content}
+                        ${type === 'lumen' ? '<button class="copy-btn">Копировать</button>' : ''}
+                    </div>
+                `;
+                messages.appendChild(messageEl);
+                messages.scrollTop = messages.scrollHeight;
+            }
+
+            showTyping() {
+                const messages = document.getElementById('chatMessages');
+                const typingEl = document.createElement('div');
+                typingEl.className = 'message';
+                typingEl.innerHTML = `
+                    <div class="avatar-container"><div class="avatar-lumen">L</div></div>
+                    <div class="message-content lumen-response">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+                        </div>
+                    </div>
+                `;
+                messages.appendChild(typingEl);
+                messages.scrollTop = messages.scrollHeight;
+                return typingEl;
+            }
+
+            removeTyping(typingEl) {
+                typingEl.remove();
+            }
+
+            updateCounters() {
+                document.getElementById('requestCount').textContent = this.requestCount;
+                document.getElementById('mobileRequestCount').textContent = this.requestCount;
+                document.getElementById('sidebarRequestCount').textContent = `${this.requestCount}/50`;
+            }
+
+            newChat() {
+                document.getElementById('chatMessages').innerHTML = `
+                    <div class="message">
+                        <div class="avatar-container"><div class="avatar-lumen">L</div></div>
+                        <div class="message-content lumen-response">
+                            Добро пожаловать! Я Lumen AI - Personal Engine Operator версии 1.0.
+                            <button class="copy-btn">Копировать</button>
+                        </div>
+                    </div>
+                `;
+                this.requestCount = 0;
+                this.updateCounters();
+            }
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            new LumenChat();
+        });
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+        }
+    </script>
+</body>
+</html>
