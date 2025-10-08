@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lumen AI - Personal Engine Operator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            height: 100vh;
+            background: #0a0a0a;
+        }
+
+        /* Сайдбар */
+        .sidebar {
+            width: 280px;
+            background: #111111;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #1a1a1a;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .lumen-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #0066ff;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .lumen-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0066ff;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+
+        .new-chat-btn:hover {
+            background: #0088ff;
+        }
+
+        .chat-history {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 12px 15px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            color: #888;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            background: #2a2a2a;
+            color: #e0e0e0;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #1a1a1a;
+        }
+
+        .system-status {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            color: #00ff88;
+        }
+
+        .reset-timer {
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        /* Основной контент */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #0a0a0a;
+        }
+
+        .chat-header {
+            padding: 15px 30px;
+            border-bottom: 1px solid #1a1a1a;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-title h1 {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #0066ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .version-badge {
+            background: #0066ff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .request-counter {
+            font-size: 12px;
+            color: #666;
+            background: #1a1a1a;
+            padding: 6px 12px;
+            border-radius: 15px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            display: flex;
+            gap: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            align-items: flex-start;
+        }
+
+        .message.user {
+            background: rgba(26, 26, 26, 0.5);
+            padding: 20px;
+            border-left: 3px solid #0066ff;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .avatar-container {
+            width: 40px;
+            flex-shrink: 0;
+        }
+
+        .avatar-lumen, .avatar-user {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .avatar-lumen {
+            background: #0066ff;
+            color: #fff;
+        }
+
+        .avatar-user {
+            background: #00ff88;
+            color: #000;
+        }
+
+        .message-content {
+            flex: 1;
+            line-height: 1.6;
+            font-size: 14px;
+            min-width: 0;
+        }
+
+        .lumen-response {
+            color: #e0e0e0;
+            border-left: 2px solid #0066ff;
+            padding-left: 15px;
+        }
+
+        .input-container {
+            padding: 25px 30px;
+            border-top: 1px solid #1a1a1a;
+            background: #0a0a0a;
+        }
+
+        .input-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .input-area {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            transition: border-color 0.2s;
+        }
+
+        .input-area:focus-within {
+            border-color: #0066ff;
+        }
+
+        #messageInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 15px 0;
+            color: #e0e0e0;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            line-height: 1.5;
+            max-height: 120px;
+            min-height: 20px;
+        }
+
+        .send-btn {
+            background: #0066ff;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 6px;
+            margin-left: 10px;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover {
+            background: #0088ff;
+        }
+
+        .send-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .disclaimer {
+            text-align: center;
+            font-size: 11px;
+            color: #444;
+            margin-top: 12px;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 10px 0;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #0066ff;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        .copy-btn {
+            background: #2a2a2a;
+            color: #888;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-left: 10px;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #3a3a3a;
+            color: #e0e0e0;
+        }
+
+        /* Мобильная версия */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .chat-header {
+                padding: 15px 20px;
+            }
+            
+            .chat-messages {
+                padding: 20px;
+                gap: 15px;
+            }
+            
+            .message {
+                gap: 12px;
+            }
+            
+            .message.user {
+                padding: 15px;
+            }
+            
+            .input-container {
+                padding: 20px;
+            }
+            
+            #messageInput {
+                padding: 12px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Сайдбар -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="lumen-title">
+                    <div class="lumen-dot"></div>
+                    Lumen AI
+                </div>
+                <button class="new-chat-btn" id="newChatBtn">
+                    + Новый диалог
+                </button>
+            </div>
+            <div class="chat-history" id="chatHistory">
+                <div class="history-item">Сегодняшний диалог</div>
+                <div class="history-item">Вчера, 15:30</div>
+                <div class="history-item">12 марта, 10:15</div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-item">
+                        <span>Статус системы</span>
+                        <span class="status-value">Онлайн</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Запросы сегодня</span>
+                        <span class="status-value" id="sidebarRequestCount">0/50</span>
+                    </div>
+                    <div class="status-item">
+                        <span>Версия</span>
+                        <span class="status-value">PEO-1.0</span>
+                    </div>
+                    <div class="reset-timer" id="resetTimer">
+                        Сброс через: 2:00:00
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="main-content">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <h1>Lumen AI</h1>
+                    <div class="version-badge">PEO-1.0</div>
+                </div>
+                <div class="request-counter">
+                    Запросов: <span id="requestCount">0</span>/50
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <!-- Сообщения будут добавляться здесь -->
+            </div>
+
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <div class="input-area">
+                        <textarea 
+                            id="messageInput" 
+                            placeholder="Обратитесь к Lumen AI..." 
+                            rows="1"
+                        ></textarea>
+                        <button class="send-btn" id="sendButton">
+                            Отправить
+                        </button>
+                    </div>
+                </div>
+                <div class="disclaimer">
+                    Lumen AI - Personal Engine Operator v1.0
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class LumenChat {
+            constructor() {
+                this.requestCount = 0;
+                this.maxRequests = 50;
+                this.currentChat = [];
+                
+                this.initializeStorage();
+                this.initializeEventListeners();
+                this.showWelcomeMessage();
+                this.updateRequestCounter();
+                this.startResetTimer();
+            }
+
+            initializeStorage() {
+                const stored = localStorage.getItem('lumenAI_requests');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    const now = Date.now();
+                    const twoHours = 2 * 60 * 60 * 1000;
+                    
+                    if (now - data.timestamp < twoHours) {
+                        this.requestCount = data.count;
+                    } else {
+                        this.requestCount = 0;
+                        this.saveToStorage();
+                    }
+                } else {
+                    this.requestCount = 0;
+                    this.saveToStorage();
+                }
+            }
+
+            saveToStorage() {
+                const data = {
+                    count: this.requestCount,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('lumenAI_requests', JSON.stringify(data));
+            }
+
+            initializeEventListeners() {
+                const textarea = document.getElementById('messageInput');
+                textarea.addEventListener('input', this.autoResize.bind(this));
+                
+                document.getElementById('sendButton').addEventListener('click', () => {
+                    this.sendMessage();
+                });
+                
+                document.getElementById('newChatBtn').addEventListener('click', () => {
+                    this.newChat();
+                });
+                
+                document.getElementById('messageInput').addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+            }
+
+            autoResize() {
+                const textarea = document.getElementById('messageInput');
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+            }
+
+            showWelcomeMessage() {
+                const welcomeMessage = {
+                    type: 'lumen',
+                    content: 'Добро пожаловать! Я Lumen AI - Personal Engine Operator версии 1.0. Готов оказать помощь по любым вопросам. Чем могу быть полезен сегодня?',
+                    timestamp: new Date()
+                };
+                this.addMessageToChat(welcomeMessage);
+            }
+
+            async sendMessage() {
+                const input = document.getElementById('messageInput');
+                const message = input.value.trim();
+                
+                if (!message) return;
+                
+                if (this.requestCount >= this.maxRequests) {
+                    this.showError('Превышен лимит запросов на сегодня. Сброс через: ' + this.getTimeUntilReset());
+                    return;
+                }
+
+                // Добавляем сообщение пользователя
+                const userMessage = {
+                    type: 'user',
+                    content: message,
+                    timestamp: new Date()
+                };
+                this.addMessageToChat(userMessage);
+                
+                input.value = '';
+                this.autoResize();
+                
+                // Показываем индикатор набора
+                const typingIndicator = this.showTypingIndicator();
+                
+                try {
+                    // Отправляем запрос к реальному API
+                    const response = await this.getLumenResponse(message);
+                    this.removeTypingIndicator(typingIndicator);
+                    
+                    const lumenMessage = {
+                        type: 'lumen',
+                        content: response,
+                        timestamp: new Date()
+                    };
+                    this.addMessageToChat(lumenMessage);
+                    
+                    this.requestCount++;
+                    this.saveToStorage();
+                    this.updateRequestCounter();
+                    
+                } catch (error) {
+                    this.removeTypingIndicator(typingIndicator);
+                    this.showError('Ошибка подключения: ' + error.message);
+                }
+            }
+
+            async getLumenResponse(question) {
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ message: question })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    return data.choices[0].message.content;
+                    
+                } catch (error) {
+                    console.error('API Request failed:', error);
+                    throw new Error('Не удалось подключиться к серверу');
+                }
+            }
+
+            addMessageToChat(message) {
+                this.currentChat.push(message);
+                this.renderMessage(message);
+            }
+
+            renderMessage(message) {
+                const chatMessages = document.getElementById('chatMessages');
+                
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${message.type === 'user' ? 'user' : ''}`;
+                
+                const avatar = message.type === 'lumen' ? 
+                    '<div class="avatar-lumen">L</div>' : 
+                    '<div class="avatar-user">Вы</div>';
+                
+                const contentClass = message.type === 'lumen' ? 'lumen-response' : '';
+                
+                messageElement.innerHTML = `
+                    <div class="avatar-container">
+                        ${avatar}
+                    </div>
+                    <div class="message-content ${contentClass}">
+                        ${message.content}
+                        ${message.type === 'lumen' ? 
+                            `<button class="copy-btn" onclick="copyToClipboard('${this.escapeHtml(message.content)}')">Копировать</button>` : 
+                            ''}
+                    </div>
+                `;
+                
+                chatMessages.appendChild(messageElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML.replace(/'/g, "\\'");
+            }
+
+            showTypingIndicator() {
+                const chatMessages = document.getElementById('chatMessages');
+                const typingElement = document.createElement('div');
+                typingElement.className = 'message';
+                typingElement.id = 'typing-indicator';
+                typingElement.innerHTML = `
+                    <div class="avatar-container">
+                        <div class="avatar-lumen">L</div>
+                    </div>
+                    <div class="message-content lumen-response">
+                        <div class="typing-indicator">
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                            <div class="typing-dot"></div>
+                        </div>
+                    </div>
+                `;
+                
+                chatMessages.appendChild(typingElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                return typingElement;
+            }
+
+            removeTypingIndicator(typingElement) {
+                if (typingElement && typingElement.parentNode) {
+                    typingElement.parentNode.removeChild(typingElement);
+                }
+            }
+
+            showError(message) {
+                const errorMessage = {
+                    type: 'lumen',
+                    content: message,
+                    timestamp: new Date()
+                };
+                this.addMessageToChat(errorMessage);
+            }
+
+            updateRequestCounter() {
+                document.getElementById('requestCount').textContent = this.requestCount;
+                document.getElementById('sidebarRequestCount').textContent = `${this.requestCount}/50`;
+            }
+
+            startResetTimer() {
+                setInterval(() => {
+                    this.updateResetTimer();
+                }, 1000);
+                this.updateResetTimer();
+            }
+
+            updateResetTimer() {
+                const stored = localStorage.getItem('lumenAI_requests');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    const now = Date.now();
+                    const timePassed = now - data.timestamp;
+                    const timeLeft = (2 * 60 * 60 * 1000) - timePassed;
+                    
+                    if (timeLeft <= 0) {
+                        this.requestCount = 0;
+                        this.saveToStorage();
+                        this.updateRequestCounter();
+                    }
+                    
+                    this.displayTimeLeft(timeLeft);
+                }
+            }
+
+            displayTimeLeft(timeLeft) {
+                const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                
+                const timerElement = document.getElementById('resetTimer');
+                if (timerElement) {
+                    timerElement.textContent = `Сброс через: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }
+
+            getTimeUntilReset() {
+                const stored = localStorage.getItem('lumenAI_requests');
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    const now = Date.now();
+                    const timePassed = now - data.timestamp;
+                    const timeLeft = (2 * 60 * 60 * 1000) - timePassed;
+                    
+                    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    return `${hours}ч ${minutes}м`;
+                }
+                return '2ч 0м';
+            }
+
+            newChat() {
+                this.currentChat = [];
+                document.getElementById('chatMessages').innerHTML = '';
+                this.requestCount = 0;
+                this.saveToStorage();
+                this.updateRequestCounter();
+                this.showWelcomeMessage();
+            }
+        }
+
+        // Глобальные функции
+        let chat = null;
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('Текст скопирован');
+            }).catch(err => {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            });
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            chat = new LumenChat();
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>
